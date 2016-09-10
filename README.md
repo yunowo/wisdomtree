@@ -1,2 +1,2 @@
 # wisdomtree
-I love study! Studying makes me happy!
+Simple scripts that make study much easier.
