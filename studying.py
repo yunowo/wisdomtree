@@ -7,7 +7,7 @@ from Cryptodome.PublicKey import RSA
 import utils
 import userinfo
 
-SSL_VERIFY = False
+SSL_VERIFY = True
 SERVER = 'https://appserver.zhihuishu.com/app-web-service'
 
 if __name__ == '__main__':

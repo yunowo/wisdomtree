@@ -4,17 +4,9 @@ import requests
 
 import userinfo
 
-SSL_VERIFY = False
+SSL_VERIFY = True
 SERVER = 'https://appserver.zhihuishu.com/app-web-service'
 AUTO_SUBMIT = True
-
-
-class IntEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, int):
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
-
 
 if __name__ == '__main__':
     user = userinfo.USER
@@ -61,18 +53,19 @@ if __name__ == '__main__':
             if d['questionTypeName'] == '多选题' or '单选题':
                 answer = d['realAnswer'].split(',')
             else:
+                AUTO_SUBMIT = False
                 continue
 
             pa = [{'deviceType': '1', 'examId': str(exam_id), 'userId': str(user), 'stuExamId': str(student_exam_id),
                    'questionId': str(question_id), 'recruitId': str(recruit_id), 'answerIds': answer, 'dataIds': []}]
-            pb = {'json': json.dumps(pa, separators=(',', ':'), cls=IntEncoder)}
+            pb = {'json': json.dumps(pa, separators=(',', ':'))}
             r = s.post(SERVER + '/appserver/exam/saveExamAnswer', data=pb, verify=SSL_VERIFY)
             logger.info(r.json()['rt'][0]['messages'])
         if not AUTO_SUBMIT:
             continue
         pa = {'deviceType': '1', 'userId': str(user), 'stuExamId': str(student_exam_id),
               'questionIds': question_ids, 'remainingTime': '0', 'achieveCount': str(question_ids.__len__())}
-        p = {'mobileType': 2, 'userId': user, 'json': json.dumps(pa, separators=(',', ':'), cls=IntEncoder)}
+        p = {'mobileType': 2, 'userId': user, 'json': json.dumps(pa, separators=(',', ':'))}
         r = s.post(SERVER + '/appserver/exam/submitExamInfo', data=p, verify=SSL_VERIFY)
         d = r.json()['rt']
         logger.info(d['messages'] + ' Score: ' + d['errorInfo']['score'])
