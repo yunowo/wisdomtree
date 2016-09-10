@@ -36,6 +36,8 @@ if __name__ == '__main__':
          'pageSize': 20}  # examType=2 is finished exams
     r = s.post(SERVER + '/appserver/exam/findAllExamInfo', data=p, verify=SSL_VERIFY)
     for exam in r.json()['rt']['stuExamDtoList']:
+        if exam['examInfoDto']['type'] == 2:  # Final exams
+            continue
         logger.info(exam['examInfoDto']['name'])
         exam_id = exam['examInfoDto']['examId']
         student_exam_id = exam['studentExamInfoDto']['id']
@@ -69,3 +71,4 @@ if __name__ == '__main__':
         r = s.post(SERVER + '/appserver/exam/submitExamInfo', data=p, verify=SSL_VERIFY)
         d = r.json()['rt']
         logger.info(d['messages'] + ' Score: ' + d['errorInfo']['score'])
+    logger.info('Done.')
