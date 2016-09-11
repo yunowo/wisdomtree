@@ -72,7 +72,7 @@ if __name__ == '__main__':
               'questionIds': question_ids, 'remainingTime': '0', 'achieveCount': str(question_ids.__len__())}
         pb = {'mobileType': 2, 'userId': user, 'json': json.dumps(pa, separators=(',', ':'))}
         r = s.post(SERVER + '/appserver/exam/submitExamInfo', data=pb, verify=SSL_VERIFY)
-        d = r.json()['rt']
+        d = json.loads(r.text.replace('"{', '{').replace('}"', '}'))['rt']
         logger.info(d['messages'] + ' Score: ' + d['errorInfo']['score'])
 
     logger.info('Done.')
