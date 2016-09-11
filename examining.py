@@ -26,9 +26,9 @@ if __name__ == '__main__':
     for course in r.json()['rt']['studyList']:
         if input(course['courseName'] + ':[y/n]') == 'y':
             course_id = course['courseId']
-        recruit_id = course['recruitId']
-        link_course_id = course['linkCourseId']
-        continue
+            recruit_id = course['recruitId']
+            link_course_id = course['linkCourseId']
+            continue
     if course_id == 0:
         exit()
 
@@ -36,12 +36,14 @@ if __name__ == '__main__':
          'pageSize': 20}  # examType=2 is finished exams
     r = s.post(SERVER + '/appserver/exam/findAllExamInfo', data=p, verify=SSL_VERIFY)
     for exam in r.json()['rt']['stuExamDtoList']:
-        if exam['examInfoDto']['type'] == 2:  # Final exams
-            continue
         logger.info(exam['examInfoDto']['name'])
+        if exam['examInfoDto']['type'] == 2:  # Final exams
+            logger.info('Skipped.')
+            continue
         exam_id = exam['examInfoDto']['examId']
         student_exam_id = exam['studentExamInfoDto']['id']
         question_ids = []
+
         p = {'appType': 1, 'userId': user, 'studentExamId': student_exam_id}
         r = s.post(SERVER + '/student/exam/examQuestionIdList', data=p, verify=SSL_VERIFY)
         for question in r.json()['rt']['examList']:
@@ -65,10 +67,12 @@ if __name__ == '__main__':
             logger.info(r.json()['rt'][0]['messages'])
         if not AUTO_SUBMIT:
             continue
+
         pa = {'deviceType': '1', 'userId': str(user), 'stuExamId': str(student_exam_id),
               'questionIds': question_ids, 'remainingTime': '0', 'achieveCount': str(question_ids.__len__())}
-        p = {'mobileType': 2, 'userId': user, 'json': json.dumps(pa, separators=(',', ':'))}
-        r = s.post(SERVER + '/appserver/exam/submitExamInfo', data=p, verify=SSL_VERIFY)
+        pb = {'mobileType': 2, 'userId': user, 'json': json.dumps(pa, separators=(',', ':'))}
+        r = s.post(SERVER + '/appserver/exam/submitExamInfo', data=pb, verify=SSL_VERIFY)
         d = r.json()['rt']
         logger.info(d['messages'] + ' Score: ' + d['errorInfo']['score'])
+
     logger.info('Done.')
