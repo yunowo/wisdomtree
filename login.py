@@ -8,7 +8,7 @@ if __name__ == '__main__':
     s = requests.Session()
     s.headers.update(
         {'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 7.0; Nexus 5X Build/NRD90S', 'Accept-Encoding': 'gzip'})
-    s.cookies.update({'Z_LOCALE': '2'})
+    s.cookies.update({'Z_LOCALE': '2', 'SERVERID': '452f6013e2e3da3c556933e21006fcf4|1473776004|1473775975'})
 
     account = input('Account(Phone):')
     password = getpass(prompt='Password:')

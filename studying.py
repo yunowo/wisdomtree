@@ -32,7 +32,7 @@ if __name__ == '__main__':
             course_id = course['courseId']
             recruit_id = course['recruitId']
             link_course_id = course['linkCourseId']
-            continue
+            break
     if course_id == 0:
         exit()
 
