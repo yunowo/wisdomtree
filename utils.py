@@ -3,11 +3,12 @@ from Cryptodome.Math.Numbers import Integer
 from Cryptodome.Util.number import ceil_div, bytes_to_long, long_to_bytes, size
 from Cryptodome.Util.py3compat import bchr, bord, b
 
-
-# pycrypto doesn't allow non hash objects in Cryptodome.Signature.PKCS115_SigScheme.
-# This modified PKCS115_Cipher function encrypts messages using (d,n) instead of (e,n)
-# and using 0xFF when padding rather than random bytes.
-# It's equivalent to the RSA/ECB/PKCS1Padding when encrypting data using private keys in Java.
+'''
+pycrypto doesn't allow non hash objects in Cryptodome.Signature.PKCS115_SigScheme.
+This modified PKCS115_Cipher function encrypts messages using (d,n) instead of (e,n)
+and using 0xFF when padding rather than random bytes.
+It's equivalent to the RSA/ECB/PKCS1Padding when encrypting data using private keys in Java.
+'''
 def cipher(key, message):
     mod_bits = size(key.n)
     k = ceil_div(mod_bits, 8)
