@@ -13,7 +13,7 @@ TAKE_EXAMS = True
 EXAM_AUTO_SUBMIT = True
 
 if __name__ == '__main__':
-    logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG)
+    logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.INFO)
     logger = logging.getLogger()
 
     key = RSA.importKey(open('key.pem', 'r').read())
@@ -31,15 +31,15 @@ if __name__ == '__main__':
         password = getpass(prompt='Password:')
         assert account or password
 
-        p = {'mobileVersion': '2.7.0', 'mobileType': 1, 'account': account, 'password': password, 'appType': 1}
+        p = {'mobileVersion': '2.7.1', 'mobileType': 1, 'account': account, 'password': password, 'appType': 1}
         r = s.post(SERVER + '/appserver/base/loginApp', data=p, verify=SSL_VERIFY)
         d = r.json()['rt']
         u = d['id']
         n = d['realName']
-        logger.info(n + ' ' + str(u))
+        logger.info('{} {}'.format(u, n))
         with open('userinfo.py', 'w+', encoding='utf-8') as f:
-            f.writelines('USER = ' + str(u) + '\n')
-            f.writelines('NAME = "' + n + '"')
+            f.writelines('USER = {}\n'.format(u))
+            f.writelines('NAME = "{}"'.format(n))
         logger.info('Login OK.')
         return u, n
 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
         user = userinfo.USER
         name = userinfo.NAME
-        if input('Current user:' + name + ' ' + str(user) + ':[y/n]') != 'y':
+        if input('Current user:{} {}:[y/n]'.format(user, name)) != 'y':
             user, name = login()
     except:
         user, name = login()
@@ -102,7 +102,7 @@ if __name__ == '__main__':
         exit()
 
     p = {'mobileType': 1, 'recruitId': recruit_id, 'courseId': course_id, 'page': 1, 'userId': user, 'examType': 1,
-         'pageSize': 20}  # examType=2 is finished exams
+         'pageSize': 20}  # examType=2 is for finished exams
     r = s.post(SERVER + '/appserver/exam/findAllExamInfo', data=p, verify=SSL_VERIFY)
     for exam in r.json()['rt']['stuExamDtoList']:
         logger.info(exam['examInfoDto']['name'])
