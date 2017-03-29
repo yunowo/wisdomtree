@@ -57,6 +57,9 @@ if __name__ == '__main__':
     p = {'userId': user}
     r = s.post(SERVER + '/appserver/online/findAllCourseList', data=p, verify=SSL_VERIFY)
     course_id, recruit_id, link_course_id = 0, 0, 0
+    if r.json()['rt']['studyList'] is None:
+        logger.info('No courses')
+        exit()
     for course in r.json()['rt']['studyList']:
         if input(course['courseName'] + ':[y/n]') == 'y':
             course_id = course['courseId']
