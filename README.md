@@ -1,6 +1,9 @@
 # wisdomtree
 A simple script that makes studying much easier.
 
+## WARNING
+Due to the server-side updates, the script currently don't work correctly. Please wait for next version.
+
 ## Install
 
  - `git clone https://github.com/liu-yun/wisdomtree`
