@@ -1,7 +1,12 @@
 import base64
+import hashlib
+
+from Cryptodome import Random
+from Cryptodome.Hash import SHA
 from Cryptodome.Math.Numbers import Integer
 from Cryptodome.Util.number import ceil_div, bytes_to_long, long_to_bytes, size
 from Cryptodome.Util.py3compat import bchr, bord, b
+from Cryptodome.Cipher import PKCS1_v1_5
 
 '''
 pycrypto doesn't allow non hash objects in Cryptodome.Signature.PKCS115_SigScheme.
@@ -9,6 +14,8 @@ This modified PKCS115_Cipher function encrypts messages using (d,n) instead of (
 and using 0xFF when padding rather than random bytes.
 It's equivalent to the RSA/ECB/PKCS1Padding when encrypting data using private keys in Java.
 '''
+
+
 def cipher(key, message):
     mod_bits = size(key.n)
     k = ceil_div(mod_bits, 8)
@@ -40,4 +47,23 @@ def cipher(key, message):
 
 
 def rsa_encrypt(key, data):
-    return base64.b64encode(cipher(key, data[:117]) + cipher(key, data[117:]))
+    s = b''
+    for a in [cipher(key, data[i:i + 117]) for i in range(0, len(data), 117)]:
+        s += a
+    return base64.b64encode(s)
+
+
+def rsa_decrypt(key, data):
+    a = Random.new().read(35)
+    return PKCS1_v1_5.new(key).decrypt(base64.b64decode(data), a).decode('utf-8')
+
+
+def md5_encrypt(s):
+    hex_digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']
+    m = hashlib.md5()
+    m.update(s.encode('utf-8'))
+    md5_str = ''
+    for b in m.digest():
+        md5_str += hex_digits[(b >> 4) & 15]
+        md5_str += hex_digits[b % 15]
+    return md5_str
