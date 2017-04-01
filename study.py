@@ -179,6 +179,14 @@ if __name__ == '__main__':
         question_ids = []
 
         add_headers_signature()
+        p = {'userId': user}
+        r = s.post(SERVER + '/student/exam/canIntoExam', data=p, verify=SSL_VERIFY)
+        d = r.json()['rt']
+        if d != 1:
+            logger.info('Cannot into exam.')
+            continue
+
+        add_headers_signature()
         p = {'recruitId': recruit_id, 'examId': exam_id, 'isSubmit': 0, 'studentExamId': student_exam_id,
              'type': exam_type, 'userId': user}
         r = s.post(SERVER + '/student/exam/examQuestionIdListByCache', data=p, verify=SSL_VERIFY)
