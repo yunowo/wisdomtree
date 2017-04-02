@@ -46,19 +46,13 @@ def login():
     se = d['secret']
 
     s.headers.clear()
-    # timestamp = str(int(datetime.now().timestamp() * 1000))
-    # s.headers.update({
-    #     'Timestamp': timestamp,
-    #     'App-Signature': utils.md5_encrypt(app_key + timestamp + se)
-    # })
-    # p = {'type': 1, 'userId': u, 'secretStr': utils.md5_encrypt(se), 'versionKey': 1}
-    # r = s.post(SERVER + '/appstudent/student/user/getUserInfoAndAuthentication', data=p, verify=SSL_VERIFY)
-    # d = r.json()['rt']
-    # ai = d['authInfo']
-    # ui = d['userInfo']
-    # logger.info(utils.rsa_decrypt(rsa_key, ai))
-    # logger.info(utils.rsa_decrypt(rsa_key, ui))
-    n = 'Your name'
+    p = {'type': 3, 'userId': u, 'secretStr': utils.rsa_encrypt(rsa_key, u), 'versionKey': 1}
+    d = post(SIGN, '/appstudent/student/user/getUserInfoAndAuthentication', p)
+    ai = json.loads(utils.rsa_decrypt(rsa_key, d['authInfo']))
+    ui = json.loads(utils.rsa_decrypt(rsa_key, d['userInfo']))
+    logger.info(ai)
+    logger.info(ui)
+    n = ui['realName']
     logger.info('{} {}'.format(u, n))
     with open('userinfo.py', 'w+', encoding='utf-8') as f:
         f.writelines('USER = {}\n'.format(u))
@@ -128,7 +122,7 @@ if __name__ == '__main__':
         else:
             j['lessonVideoId'] = dic['id']
         json_str = json.dumps(j, sort_keys=True, separators=(',', ':'))
-        p = {'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(rsa_key, json_str.encode('utf-8')), 'versionKey': 1}
+        p = {'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(rsa_key, json_str), 'versionKey': 1}
         rt = post(SIGN, '/student/tutorial/saveLearningRecordByToken', p)
         logger.info(dic['name'] + rt)
 
@@ -191,7 +185,7 @@ if __name__ == '__main__':
                    'questionId': str(question_id), 'recruitId': str(recruit_id), 'answerIds': answer, 'dataIds': []}]
             json_str = json.dumps(pa, separators=(',', ':'))
             pb = {'mobileType': 2, 'jsonStr': json_str,
-                  'secretStr': utils.rsa_encrypt(rsa_key, json_str.encode('utf-8')),
+                  'secretStr': utils.rsa_encrypt(rsa_key, json_str),
                   'versionKey': 1}
             rt = post(SIGN, '/student/exam/saveExamAnswer', pb)
             logger.info(rt[0]['messages'])
@@ -203,7 +197,7 @@ if __name__ == '__main__':
               'achieveCount': str(question_ids.__len__())}
         json_str = json.dumps(pa, separators=(',', ':'))
         pb = {'mobileType': 2, 'recruitId': recruit_id, 'examId': str(exam_id), 'userId': user, 'jsonStr': json_str,
-              'secretStr': utils.rsa_encrypt(rsa_key, json_str.encode('utf-8')), 'type': exam_type, 'versionKey': 1}
+              'secretStr': utils.rsa_encrypt(rsa_key, json_str), 'type': exam_type, 'versionKey': 1}
         raw = post(SIGN, '/student/exam/submitExamInfo', pb, raw=True)
         rt = json.loads(raw.replace('"{', '{').replace('}"', '}').replace('\\', ''))['rt']
         logger.info(rt['messages'] + ' Score: ' + rt['errorInfo']['score'])
