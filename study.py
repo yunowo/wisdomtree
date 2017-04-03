@@ -53,11 +53,11 @@ def login():
     logger.info(ai)
     logger.info(ui)
     n = ui['realName']
-    logger.info('{} {}'.format(u, n))
+    logger.info(f'{u} {n}')
     with open('userinfo.py', 'w+', encoding='utf-8') as f:
-        f.writelines('USER = {}\n'.format(u))
-        f.writelines('NAME = "{}"\n'.format(n))
-        f.writelines('SECRET = "{}"'.format(se))
+        f.writelines(f'USER = {u}\n')
+        f.writelines(f'NAME = "{n}"\n')
+        f.writelines(f'SECRET = "{se}"')
     logger.info('Login OK.')
     return u, n, se
 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         user = userinfo.USER
         name = userinfo.NAME
         secret = userinfo.SECRET
-        if input('Current user:{} {}:[y/n]'.format(user, name)) != 'y':
+        if input(f'Current user:{user} {name}:[y/n]') != 'y':
             user, name, secret = login()
     except:
         user, name, secret = login()
@@ -200,6 +200,6 @@ if __name__ == '__main__':
               'secretStr': utils.rsa_encrypt(rsa_key, json_str), 'type': exam_type, 'versionKey': 1}
         raw = post(SIGN, '/student/exam/submitExamInfo', pb, raw=True)
         rt = json.loads(raw.replace('"{', '{').replace('}"', '}').replace('\\', ''))['rt']
-        logger.info(rt['messages'] + ' Score: ' + rt['errorInfo']['score'])
+        logger.info(f'{rt["messages"]} Score: {rt["errorInfo"]["score"]}')
 
     logger.info('Exams done.')

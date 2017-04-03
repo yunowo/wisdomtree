@@ -47,9 +47,7 @@ def _encrypt(key, message):
 
 def rsa_encrypt(key, data):
     b = data.encode('utf-8')
-    s = b''
-    for a in [_encrypt(key, b[i:i + 117]) for i in range(0, len(b), 117)]:
-        s += a
+    s = b''.join([_encrypt(key, b[i:i + 117]) for i in range(0, len(b), 117)])
     return base64.b64encode(s)
 
 
@@ -57,18 +55,9 @@ def rsa_decrypt(key, data):
     sentinel = Random.new().read(35)
     cipher = PKCS1_v1_5.new(key)
     b = base64.b64decode(data)
-    s = b''
-    for a in [cipher.decrypt(b[i:i + 128], sentinel) for i in range(0, len(b), 128)]:
-        s += a
+    s = b''.join([cipher.decrypt(b[i:i + 128], sentinel) for i in range(0, len(b), 128)])
     return s.decode('utf-8')
 
 
 def md5_encrypt(s):
-    hex_digits = '0123456789abcdef'
-    m = hashlib.md5()
-    m.update(s.encode('utf-8'))
-    md5_str = ''
-    for b in m.digest():
-        md5_str += hex_digits[(b >> 4) & 15]
-        md5_str += hex_digits[b % 15]
-    return md5_str
+    return hashlib.md5(s.encode('utf-8')).hexdigest()
