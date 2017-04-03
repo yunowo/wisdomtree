@@ -21,7 +21,7 @@ def post(head, url, data, raw=False):
     timestamp = str(int(datetime.now().timestamp() * 1000))
     s.headers.update({'Timestamp': timestamp})
     if head == SIGN:
-        s.headers.update({'App-Signature': utils.md5_encrypt(app_key + timestamp + secret)})
+        s.headers.update({'App-Signature': utils.md5_digest(app_key + timestamp + secret)})
     elif head == TICKET:
         s.headers.update({'App-Ticket': ticket})
     r = s.post(SERVER + url, data=data, verify=SSL_VERIFY)
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     logger.info('I love studying! Study makes me happy!')
 
     rsa_key = RSA.import_key(open('key.pem', 'r').read())
-    app_key = utils.md5_encrypt(str(uuid.uuid4()).replace('-', ''))
+    app_key = utils.md5_digest(str(uuid.uuid4()).replace('-', ''))
 
     s = requests.Session()
     s.headers.update({

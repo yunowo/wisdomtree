@@ -59,5 +59,5 @@ def rsa_decrypt(key, data):
     return s.decode('utf-8')
 
 
-def md5_encrypt(s):
+def md5_digest(s):
     return hashlib.md5(s.encode('utf-8')).hexdigest()
