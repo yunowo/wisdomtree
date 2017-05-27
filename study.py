@@ -40,7 +40,7 @@ def login():
     ticket = post(NONE, '/api/ticket', p)
 
     p = {'platform': 'android', 'm': account, 'appkey': app_key, 'p': password, 'client': 'student',
-         'version': '2.8.9'}
+         'version': '2.9.3'}
     d = post(TICKET, '/api/login', p)
     u = d['userId']
     se = d['secret']
@@ -143,7 +143,7 @@ if __name__ == '__main__':
         exit()
 
     p = {'mobileType': 2, 'recruitId': recruit_id, 'courseId': course_id, 'page': 1, 'userId': user, 'examType': 1,
-         'schoolId': -1, 'pageSize': 20}  # examType=2 is for finished exams
+         'pageSize': 20}  # examType=2 is for finished exams
     exam_list = post(SIGN, '/appserver/exam/findAllExamInfo', p)['stuExamDtoList']
     for exam in exam_list:
         logger.info(exam['examInfoDto']['name'])
@@ -164,14 +164,14 @@ if __name__ == '__main__':
 
         p = {'recruitId': recruit_id, 'examId': exam_id, 'isSubmit': 0, 'studentExamId': student_exam_id,
              'type': exam_type, 'userId': user}
-        ids = post(SIGN, '/student/exam/examQuestionIdListByCache', p)['examList']
+        ids = post(SIGN, '/student/exam/getExamQuestionId', p)['examList']
         p.pop('isSubmit')
         p.pop('type')
         for exam_question in ids:
             question_ids.append(str(exam_question['questionId']))
-            p['questionIds'] = question_ids
+            p['questionIds'] = f'[{",".join(question_ids)}]'
 
-        questions = post(SIGN, '/student/exam/questionInfos', p)
+        questions = post(SIGN, '/student/exam/getQuestionDetailInfo', p)
         for question_id in question_ids:
             question = questions[question_id]
             logger.info(question['firstname'])
