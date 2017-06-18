@@ -4,7 +4,7 @@ A simple script that makes studying much easier.
 
 ## Install
 Requires Python 3.6+
- - `git clone https://github.com/liu-yun/wisdomtree`
+ - `git clone https://github.com/yunv/wisdomtree`
  - `pip3 install requests`
  - `pip3 install pycryptodomex`
 
