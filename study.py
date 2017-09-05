@@ -40,7 +40,7 @@ def login():
     ticket = post(NONE, '/api/ticket', p)
 
     p = {'platform': 'android', 'm': account, 'appkey': app_key, 'p': password, 'client': 'student',
-         'version': '2.9.3'}
+         'version': '3.0.0'}
     d = post(TICKET, '/api/login', p)
     u = d['userId']
     se = d['secret']
