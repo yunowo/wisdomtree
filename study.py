@@ -97,7 +97,7 @@ if __name__ == '__main__':
         logger.info('No studying courses.')
         exit()
     for course in d:
-        if input(course['courseName'] + ':[y/n]') == 'y':
+        if input(f'{course["courseName"]} {course["className"]}:[y/n]') == 'y':
             course_id = course['courseId']
             recruit_id = course['recruitId']
             link_course_id = course['linkCourseId']
