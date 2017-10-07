@@ -40,7 +40,7 @@ def login():
     ticket = post(NONE, '/api/ticket', p)
 
     p = {'platform': 'android', 'm': account, 'appkey': app_key, 'p': password, 'client': 'student',
-         'version': '3.0.0'}
+         'version': '3.0.1'}
     d = post(TICKET, '/api/login', p)
     u = d['userId']
     se = d['secret']
@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     s = requests.Session()
     s.headers.update({
-        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 7.1.1; Nexus 5X Build/NOF27B',
+        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 8.0.0; Pixel 2 XL Build/OPR3.170623.008',
         'Accept-Encoding': 'gzip',
         'App-Key': app_key})
     secret = ''
@@ -90,8 +90,8 @@ if __name__ == '__main__':
         user, name, secret = login()
 
     SERVER += '/appstudent'
-    p = {'userId': user}
-    d = post(SIGN, '/student/tutorial/getStudyingCourses', p)
+    p = {'userId': user, 'page': 1, 'pageSize': 500}
+    d = post(SIGN, '/student/tutorial/getStudyingCourseList', p)
     course_id, recruit_id, link_course_id = 0, 0, 0
     if d is None:
         logger.info('No studying courses.')
@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
 
     p = {'recruitId': recruit_id, 'courseId': course_id, 'userId': user}
-    chapter_list = post(SIGN, '/appserver/student/getCourseInfo', p)['chapterList']
+    chapter_list = post(SIGN, '/courseStudy/course/getChaptersInfo', p)['chapterList']
     for chapter in chapter_list:
         for lesson in chapter['lessonList']:
             if lesson['sectionList'] is not None:
@@ -152,30 +152,25 @@ if __name__ == '__main__':
             if SKIP_FINAL_EXAM is True:
                 logger.info('Skipped final exam.')
                 continue
-        begin_date = datetime.strptime(exam['studentExamInfoDto']['startTime'], "%y-%m-%d %H:%M:%S")
+        begin_date = datetime.strptime(exam['studentExamInfoDto']['startTime'], '%Y-%m-%d %H:%M:%S')
         if datetime.today() < begin_date:
             logger.info('Exam not yet started.')
+            continue
 
         exam_id = exam['examInfoDto']['examId']
         student_exam_id = exam['studentExamInfoDto']['id']
         question_ids = []
 
-        p = {'userId': user}
-        rt = post(SIGN, '/student/exam/canIntoExam', p)
-        if rt != 1:
-            logger.info('Cannot into exam.')
-            continue
-
         p = {'recruitId': recruit_id, 'examId': exam_id, 'isSubmit': 0, 'studentExamId': student_exam_id,
              'type': exam_type, 'userId': user}
-        ids = post(SIGN, '/student/exam/getExamQuestionId', p)['examList']
+        ids = post(SIGN, '/student/exam/getExamQuestionIdFromTeacher', p)
         p.pop('isSubmit')
         p.pop('type')
         for exam_question in ids:
             question_ids.append(str(exam_question['questionId']))
             p['questionIds'] = f'[{",".join(question_ids)}]'
 
-        questions = post(SIGN, '/student/exam/getQuestionDetailInfo', p)
+        questions = post(SIGN, '/student/exam/getQuestionDetailInfoFromTeacher', p)
         for question_id in question_ids:
             question = questions[question_id]
             logger.info(question['firstname'])
