@@ -152,6 +152,10 @@ if __name__ == '__main__':
             if SKIP_FINAL_EXAM is True:
                 logger.info('Skipped final exam.')
                 continue
+        begin_date = datetime.strptime(exam['studentExamInfoDto']['startTime'], "%y-%m-%d %H:%M:%S")
+        if datetime.today() < begin_date:
+            logger.info('Exam not yet started.')
+
         exam_id = exam['examInfoDto']['examId']
         student_exam_id = exam['studentExamInfoDto']['id']
         question_ids = []
