@@ -8,8 +8,6 @@ from Cryptodome.PublicKey import RSA
 
 import utils
 
-NONE, SIGN, TICKET = 0, 1, 2
-
 SERVER = 'https://appstudentapi.zhihuishu.com'
 SSL_VERIFY = True
 TAKE_EXAMS = True
@@ -17,13 +15,9 @@ SKIP_FINAL_EXAM = False
 EXAM_AUTO_SUBMIT = True
 
 
-def post(head, url, data, raw=False):
+def post(url, data, raw=False):
     timestamp = str(int(datetime.now().timestamp() * 1000))
     s.headers.update({'Timestamp': timestamp})
-    if head == SIGN:
-        s.headers.update({'App-Signature': utils.md5_digest(app_key + timestamp + secret)})
-    elif head == TICKET:
-        s.headers.update({'App-Ticket': ticket})
     r = s.post(SERVER + url, data=data, verify=SSL_VERIFY)
     if raw is True:
         return r.text
@@ -35,31 +29,16 @@ def login():
     password = getpass(prompt='Password:')
     assert account or password
 
-    p = {'appkey': app_key}
-    global ticket
-    ticket = post(NONE, '/api/ticket', p)
-
-    p = {'platform': 'android', 'm': account, 'appkey': app_key, 'p': password, 'client': 'student',
-         'version': '3.0.1'}
-    d = post(TICKET, '/api/login', p)
+    p = {'account': account, 'password': password, 'areaCode': '86', 'appVersion': '3.0.4', 'clientType': '1',
+         'imei': uuid.uuid4().hex}
+    d = post('/appstudent/student/user/userLogin', p)
     u = d['userId']
-    se = d['secret']
-
-    s.headers.clear()
-    p = {'type': 3, 'userId': u, 'secretStr': utils.rsa_encrypt(rsa_key, u), 'versionKey': 1}
-    d = post(SIGN, '/appstudent/student/user/getUserInfoAndAuthentication', p)
-    ai = json.loads(utils.rsa_decrypt(rsa_key, d['authInfo']))
-    ui = json.loads(utils.rsa_decrypt(rsa_key, d['userInfo']))
-    logger.info(ai)
-    logger.info(ui)
-    n = ui['realName']
-    logger.info(f'{u} {n}')
+    uu = d['userUUID']
+    logger.info(f'{u} {uu}')
     with open('userinfo.py', 'w+', encoding='utf-8') as f:
         f.writelines(f'USER = {u}\n')
-        f.writelines(f'NAME = "{n}"\n')
-        f.writelines(f'SECRET = "{se}"')
     logger.info('Login OK.')
-    return u, n, se
+    return u
 
 
 if __name__ == '__main__':
@@ -73,25 +52,20 @@ if __name__ == '__main__':
     s = requests.Session()
     s.headers.update({
         'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 8.0.0; Pixel 2 XL Build/OPR3.170623.008',
-        'Accept-Encoding': 'gzip',
-        'App-Key': app_key})
-    secret = ''
-    ticket = ''
+        'Accept-Encoding': 'gzip'})
 
     try:
         import userinfo
 
         user = userinfo.USER
-        name = userinfo.NAME
-        secret = userinfo.SECRET
-        if input(f'Current user:{user} {name}:[y/n]') != 'y':
-            user, name, secret = login()
+        if input(f'Current user:{user}:[y/n]') != 'y':
+            user = login()
     except:
-        user, name, secret = login()
+        user = login()
 
     SERVER += '/appstudent'
     p = {'userId': user, 'page': 1, 'pageSize': 500}
-    d = post(SIGN, '/student/tutorial/getStudyingCourseList', p)
+    d = post('/student/tutorial/getStudyingCourseList', p)
     course_id, recruit_id, link_course_id = 0, 0, 0
     if d is None:
         logger.info('No studying courses.')
@@ -110,7 +84,7 @@ if __name__ == '__main__':
         if dic['studiedLessonDto'] is not None and dic['studiedLessonDto']['watchState'] == 1:
             return
         p = {'deviceId': app_key, 'userId': user, 'versionKey': 1}
-        rt = post(SIGN, '/student/tutorial/getSaveLearningRecordToken', p)
+        rt = post('/student/tutorial/getSaveLearningRecordToken', p)
         token = utils.rsa_decrypt(rsa_key, rt)
         video_time = dic['videoSec']
         chapter_id = chapter_id or dic['chapterId']
@@ -123,12 +97,12 @@ if __name__ == '__main__':
             j['lessonVideoId'] = dic['id']
         json_str = json.dumps(j, sort_keys=True, separators=(',', ':'))
         p = {'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(rsa_key, json_str), 'versionKey': 1}
-        rt = post(SIGN, '/student/tutorial/saveLearningRecordByToken', p)
+        rt = post('/student/tutorial/saveLearningRecordByToken', p)
         logger.info(dic['name'] + rt)
 
 
     p = {'recruitId': recruit_id, 'courseId': course_id, 'userId': user}
-    chapter_list = post(SIGN, '/courseStudy/course/getChaptersInfo', p)['chapterList']
+    chapter_list = post('/courseStudy/course/getChaptersInfo', p)['chapterList']
     for chapter in chapter_list:
         for lesson in chapter['lessonList']:
             if lesson['sectionList'] is not None:
@@ -144,7 +118,7 @@ if __name__ == '__main__':
 
     p = {'mobileType': 2, 'recruitId': recruit_id, 'courseId': course_id, 'page': 1, 'userId': user, 'examType': 1,
          'pageSize': 20}  # examType=2 is for finished exams
-    exam_list = post(SIGN, '/appserver/exam/findAllExamInfo', p)['stuExamDtoList']
+    exam_list = post('/appserver/exam/findAllExamInfo', p)['stuExamDtoList']
     for exam in exam_list:
         logger.info(exam['examInfoDto']['name'])
         exam_type = exam['examInfoDto']['type']
@@ -163,14 +137,14 @@ if __name__ == '__main__':
 
         p = {'recruitId': recruit_id, 'examId': exam_id, 'isSubmit': 0, 'studentExamId': student_exam_id,
              'type': exam_type, 'userId': user}
-        ids = post(SIGN, '/student/exam/getExamQuestionIdFromTeacher', p)
+        ids = post('/student/exam/getExamQuestionIdFromTeacher', p)
         p.pop('isSubmit')
         p.pop('type')
         for exam_question in ids:
             question_ids.append(str(exam_question['questionId']))
             p['questionIds'] = f'[{",".join(question_ids)}]'
 
-        questions = post(SIGN, '/student/exam/getQuestionDetailInfoFromTeacher', p)
+        questions = post('/student/exam/getQuestionDetailInfoFromTeacher', p)
         for question_id in question_ids:
             question = questions[question_id]
             logger.info(question['firstname'])
@@ -186,7 +160,7 @@ if __name__ == '__main__':
             pb = {'mobileType': 2, 'jsonStr': json_str,
                   'secretStr': utils.rsa_encrypt(rsa_key, json_str),
                   'versionKey': 1}
-            rt = post(SIGN, '/student/exam/saveExamAnswer', pb)
+            rt = post('/student/exam/saveExamAnswer', pb)
             logger.info(rt[0]['messages'])
         if not EXAM_AUTO_SUBMIT:
             continue
@@ -197,7 +171,7 @@ if __name__ == '__main__':
         json_str = json.dumps(pa, separators=(',', ':'))
         pb = {'mobileType': 2, 'recruitId': recruit_id, 'examId': str(exam_id), 'userId': user, 'jsonStr': json_str,
               'secretStr': utils.rsa_encrypt(rsa_key, json_str), 'type': exam_type, 'versionKey': 1}
-        raw = post(SIGN, '/student/exam/submitExamInfo', pb, raw=True)
+        raw = post('/student/exam/submitExamInfo', pb, raw=True)
         rt = json.loads(raw.replace('"{', '{').replace('}"', '}').replace('\\', ''))['rt']
         logger.info(f'{rt["messages"]} Score: {rt["errorInfo"]["score"]}')
 
