@@ -8,7 +8,7 @@ from Cryptodome.PublicKey import RSA
 
 import utils
 
-SERVER = 'https://appstudentapi.zhihuishu.com'
+SERVER = 'https://appstudentapi.zhihuishu.com/appstudent'
 SSL_VERIFY = True
 TAKE_EXAMS = True
 SKIP_FINAL_EXAM = False
@@ -16,8 +16,6 @@ EXAM_AUTO_SUBMIT = True
 
 
 def post(url, data, raw=False):
-    timestamp = str(int(datetime.now().timestamp() * 1000))
-    s.headers.update({'Timestamp': timestamp})
     r = s.post(SERVER + url, data=data, verify=SSL_VERIFY)
     if raw is True:
         return r.text
@@ -31,14 +29,23 @@ def login():
 
     p = {'account': account, 'password': password, 'areaCode': '86', 'appVersion': '3.0.4', 'clientType': '1',
          'imei': uuid.uuid4().hex}
-    d = post('/appstudent/student/user/userLogin', p)
+    d = post('/student/user/userLogin', p)
     u = d['userId']
     uu = d['userUUID']
-    logger.info(f'{u} {uu}')
+
+    p = {'type': 3, 'userUUID': uu, 'secretStr': utils.rsa_encrypt(rsa_key, str(u)), 'versionKey': 1}
+    d = post('/student/user/getUserInfoAndAuthenticationByUUID', p)
+    ai = json.loads(utils.rsa_decrypt(rsa_key, d['authInfo']))
+    ui = json.loads(utils.rsa_decrypt(rsa_key, d['userInfo']))
+    logger.info(ai)
+    logger.info(ui)
+    n = ui['realName']
+    logger.info(f'{u} {uu} {n}')
     with open('userinfo.py', 'w+', encoding='utf-8') as f:
         f.writelines(f'USER = {u}\n')
+        f.writelines(f'NAME = "{n}"\n')
     logger.info('Login OK.')
-    return u
+    return u, n
 
 
 if __name__ == '__main__':
@@ -58,12 +65,12 @@ if __name__ == '__main__':
         import userinfo
 
         user = userinfo.USER
-        if input(f'Current user:{user}:[y/n]') != 'y':
-            user = login()
+        name = userinfo.NAME
+        if input(f'Current user:{user} {name}:[y/n]') != 'y':
+            user, name = login()
     except:
-        user = login()
+        user, name = login()
 
-    SERVER += '/appstudent'
     p = {'userId': user, 'page': 1, 'pageSize': 500}
     d = post('/student/tutorial/getStudyingCourseList', p)
     course_id, recruit_id, link_course_id = 0, 0, 0
