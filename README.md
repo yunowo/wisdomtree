@@ -1,6 +1,7 @@
 # wisdomtree
 A simple script that makes studying much easier.
 
+**Warning:** Exam submission no longer working. You should do exams yourself.
 
 ## Install
 Requires Python 3.6+
