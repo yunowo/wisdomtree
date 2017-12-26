@@ -10,7 +10,7 @@ import utils
 
 SERVER = 'https://appstudentapi.zhihuishu.com/appstudent'
 SSL_VERIFY = True
-TAKE_EXAMS = True
+TAKE_EXAMS = False
 SKIP_FINAL_EXAM = False
 EXAM_AUTO_SUBMIT = False
 
