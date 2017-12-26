@@ -12,7 +12,7 @@ SERVER = 'https://appstudentapi.zhihuishu.com/appstudent'
 SSL_VERIFY = True
 TAKE_EXAMS = True
 SKIP_FINAL_EXAM = False
-EXAM_AUTO_SUBMIT = True
+EXAM_AUTO_SUBMIT = False
 
 
 def post(url, data, raw=False):
