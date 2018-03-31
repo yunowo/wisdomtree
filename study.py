@@ -1,5 +1,8 @@
+import itertools
 import logging
 import json
+import random
+import time
 from datetime import datetime, timedelta
 from getpass import getpass
 import uuid
@@ -15,8 +18,10 @@ SKIP_FINAL_EXAM = False
 EXAM_AUTO_SUBMIT = False
 
 
-def post(url, data, raw=False):
+def post(url, data, raw=False, sleep=True):
     r = s.post(SERVER + url, data=data, verify=SSL_VERIFY)
+    if sleep:
+        time.sleep(0.5 + random.random())
     if raw is True:
         return r.text
     return r.json()['rt']
@@ -31,12 +36,12 @@ def login():
          'imei': uuid.uuid4().hex}
     pp = {'paramJsonStr': utils.rsa_encrypt_public(public_key, json.dumps(p, separators=(',', ':'))),
           'timeNote': '1515340800'}
-    d = post('/newuser/userLoginByAccount', pp)
+    d = post('/newuser/userLoginByAccount', pp, sleep=False)
     u = d['userId']
     uu = d['userUUID']
 
     p = {'type': 3, 'userUUID': uu, 'secretStr': utils.rsa_encrypt(rsa_key, str(u)), 'versionKey': 1}
-    d = post('/student/user/getUserInfoAndAuthenticationByUUID', p)
+    d = post('/student/user/getUserInfoAndAuthenticationByUUID', p, sleep=False)
     ai = json.loads(utils.rsa_decrypt(rsa_key, d['authInfo']))
     ui = json.loads(utils.rsa_decrypt(rsa_key, d['userInfo']))
     logger.info(ai)
@@ -76,7 +81,7 @@ if __name__ == '__main__':
         user, name = login()
 
     p = {'userId': user, 'page': 1, 'pageSize': 500}
-    d = post('/student/tutorial/getStudyingCourseList', p)
+    d = post('/student/tutorial/getStudyingCourseList', p, sleep=False)
     course_id, recruit_id, link_course_id = 0, 0, 0
     if d is None:
         logger.info('No studying courses.')
@@ -156,23 +161,42 @@ if __name__ == '__main__':
             p['questionIds'] = f'[{",".join(question_ids)}]'
 
         questions = post('/student/exam/getQuestionDetailInfoFromTeacher', p)
+        undone_question_ids = question_ids[:]
         for question_id in question_ids:
             question = questions[question_id]
-            logger.info(question['firstname'])
-            if question['questionTypeName'] == '多选题' or '单选题':
-                answer = question['realAnswer'].split(',')
-            else:
+            if question['questionTypeName'] == '问答题':
+                undone_question_ids.remove(question_id)
                 EXAM_AUTO_SUBMIT = False
                 continue
+            options = list(map(lambda o: o['optionid'], question['optionList']))
+            if question['questionTypeName'] == '单选题' or question['questionTypeName'] == '判断题':
+                question['possibleAnswers'] = options
+            elif question['questionTypeName'] == '多选题':
+                combinations = []
+                for r in range(1, len(options) + 1):
+                    combinations += list(itertools.combinations(options, r))
+                question['possibleAnswers'] = combinations
+        while len(undone_question_ids) > 0:
+            p = {'recruitId': recruit_id, 'examId': exam_id, 'stuExamId': student_exam_id,
+                 'questionIds': f'[{",".join(undone_question_ids)}]', 'userId': user}
+            scores = post('/student/exam/getQuestionDoneState', p)
+            undone_question_ids[:] = itertools.filterfalse(
+                lambda q: scores[q]['score'] == questions[q]['qscore'], undone_question_ids)
+            logger.info(f'{len(undone_question_ids)} questions left.')
 
-            pa = [{'deviceType': '1', 'examId': str(exam_id), 'userId': str(user), 'stuExamId': str(student_exam_id),
-                   'questionId': str(question_id), 'recruitId': str(recruit_id), 'answerIds': answer, 'dataIds': []}]
-            json_str = json.dumps(pa, separators=(',', ':'))
-            pb = {'mobileType': 2, 'jsonStr': json_str,
-                  'secretStr': utils.rsa_encrypt(rsa_key, json_str),
-                  'versionKey': 1}
-            rt = post('/student/exam/saveExamAnswer', pb)
-            logger.info(rt[0]['messages'])
+            for question_id in undone_question_ids:
+                question = questions[question_id]
+                c = random.choice(question['possibleAnswers'])
+                question['possibleAnswers'].remove(c)
+                pa = [{'deviceType': '1', 'examId': str(exam_id), 'userId': str(user),
+                       'stuExamId': str(student_exam_id), 'questionId': str(question_id), 'recruitId': str(recruit_id),
+                       'answerIds': c, 'dataIds': []}]
+                json_str = json.dumps(pa, separators=(',', ':'))
+                pb = {'mobileType': 2, 'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(rsa_key, json_str),
+                      'versionKey': 1}
+                rt = post('/student/exam/saveExamAnswer', pb)
+                logger.info(rt[0]['messages'])
+
         if not EXAM_AUTO_SUBMIT:
             continue
 
