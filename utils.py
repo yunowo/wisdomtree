@@ -51,6 +51,13 @@ def rsa_encrypt(key, data):
     return base64.b64encode(s)
 
 
+def rsa_encrypt_public(key, data):
+    b = data.encode('utf-8')
+    cipher = PKCS1_v1_5.new(key)
+    s = b''.join([cipher.encrypt(b[i:i + 117]) for i in range(0, len(b), 117)])
+    return base64.b64encode(s)
+
+
 def rsa_decrypt(key, data):
     sentinel = Random.new().read(35)
     cipher = PKCS1_v1_5.new(key)

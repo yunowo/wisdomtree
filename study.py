@@ -27,9 +27,11 @@ def login():
     password = getpass(prompt='Password:')
     assert account or password
 
-    p = {'account': account, 'password': password, 'areaCode': '86', 'appVersion': '3.0.4', 'clientType': '1',
+    p = {'account': account, 'password': password, 'areaCode': '86', 'appVersion': '4.0.4', 'clientType': '1',
          'imei': uuid.uuid4().hex}
-    d = post('/student/user/userLogin', p)
+    pp = {'paramJsonStr': utils.rsa_encrypt_public(public_key, json.dumps(p, separators=(',', ':'))),
+          'timeNote': '1515340800'}
+    d = post('/newuser/userLoginByAccount', pp)
     u = d['userId']
     uu = d['userUUID']
 
@@ -54,11 +56,13 @@ if __name__ == '__main__':
     logger.info('I love studying! Study makes me happy!')
 
     rsa_key = RSA.import_key(open('key.pem', 'r').read())
+    public_key = RSA.import_key(open('public.pem', 'r').read())
+    yzm_key = RSA.import_key(open('yzm.pem', 'r').read())
     app_key = utils.md5_digest(str(uuid.uuid4()).replace('-', ''))
 
     s = requests.Session()
     s.headers.update({
-        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 8.0.0; Pixel 2 XL Build/OPR3.170623.008',
+        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 8.1.0; Pixel 2 XL Build/OPM1.171019.021)',
         'Accept-Encoding': 'gzip'})
 
     try:
@@ -103,7 +107,7 @@ if __name__ == '__main__':
         else:
             j['lessonVideoId'] = dic['id']
         json_str = json.dumps(j, sort_keys=True, separators=(',', ':'))
-        p = {'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(rsa_key, json_str), 'versionKey': 1}
+        p = {'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(yzm_key, json_str), 'versionKey': 2}
         rt = post('/student/tutorial/saveLearningRecordByToken', p)
         logger.info(dic['name'] + rt)
 
