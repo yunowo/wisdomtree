@@ -8,7 +8,7 @@ from Cryptodome.PublicKey import RSA
 
 import utils
 
-SERVER = 'https://appstudentapi.zhihuishu.com/appstudent'
+SERVER = 'https://appstudent.zhihuishu.com/appstudent'
 SSL_VERIFY = True
 TAKE_EXAMS = False
 SKIP_FINAL_EXAM = False
