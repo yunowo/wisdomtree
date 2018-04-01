@@ -24,7 +24,12 @@ def post(url, data, raw=False, sleep=True):
         time.sleep(0.5 + random.random())
     if raw is True:
         return r.text
-    return r.json()['rt']
+    j = r.json()
+    if 'rt' in j:
+        return j['rt']
+    else:
+        logger.error(j['msg'])
+        raise ValueError(j['msg'])
 
 
 def login():
