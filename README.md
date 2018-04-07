@@ -4,8 +4,7 @@ A simple script that makes studying much easier.
 ## Install
 Requires Python 3.6+
  - `git clone https://github.com/yunv/wisdomtree`
- - `pip3 install requests`
- - `pip3 install pycryptodomex`
+ - `pip3 install -r requirements.txt`
 
 ## Usage
  - Run `study.py` with Python3 (`python study.py` on Windows, `python3 study.py` on Linux and macOS)
