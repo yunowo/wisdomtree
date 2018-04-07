@@ -1,2 +1,2 @@
-requests
-pycryptodomex
+requests>=2.18.4
+pycryptodomex>=3.5.1
