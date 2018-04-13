@@ -37,7 +37,7 @@ def login():
     password = getpass(prompt='Password:')
     assert account or password
 
-    p = {'account': account, 'password': password, 'areaCode': '86', 'appVersion': '4.0.4', 'clientType': '1',
+    p = {'account': account, 'password': password, 'areaCode': '86', 'appVersion': '4.0.6', 'clientType': '1',
          'imei': uuid.uuid4().hex}
     pp = {'paramJsonStr': utils.rsa_encrypt_public(public_key, json.dumps(p, separators=(',', ':'))),
           'timeNote': '1515340800'}
@@ -101,21 +101,20 @@ if __name__ == '__main__':
         exit()
 
 
-    def save_record(dic, chapter_id, lesson_id):
-        if dic['studiedLessonDto'] is not None and dic['studiedLessonDto']['watchState'] == 1:
+    def save_record(dic, is_section):
+        if f'L{dic["id"]}' in studied and studied[f'L{dic["id"]}']['watchState'] == 1:
             return
         p = {'deviceId': app_key, 'userId': user, 'versionKey': 1}
         rt = post('/student/tutorial/getSaveLearningRecordToken', p)
         token = utils.rsa_decrypt(rsa_key, rt)
         video_time = dic['videoSec']
-        chapter_id = chapter_id or dic['chapterId']
-        j = {'lessonId': lesson_id, 'learnTime': str(timedelta(seconds=video_time)), 'userId': user,
-             'personalCourseId': link_course_id, 'recruitId': recruit_id, 'chapterId': chapter_id, 'sourseType': 3,
-             'playTimes': video_time, 'videoId': dic['videoId'], 'token': token, 'deviceId': app_key}
-        if lesson_id is None:
-            j['lessonId'] = dic['id']
-        else:
+        j = {'learnTime': str(timedelta(seconds=video_time)), 'userId': user, 'personalCourseId': link_course_id,
+             'recruitId': recruit_id, 'chapterId': dic['chapterId'], 'sourseType': 3, 'playTimes': video_time,
+             'videoId': dic['videoId'], 'token': token, 'deviceId': app_key}
+        if is_section:
             j['lessonVideoId'] = dic['id']
+        else:
+            j['lessonId'] = dic['id']
         json_str = json.dumps(j, sort_keys=True, separators=(',', ':'))
         p = {'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(yzm_key, json_str), 'versionKey': 2}
         rt = post('/student/tutorial/saveLearningRecordByToken', p)
@@ -123,14 +122,15 @@ if __name__ == '__main__':
 
 
     p = {'recruitId': recruit_id, 'courseId': course_id, 'userId': user}
-    chapter_list = post('/courseStudy/course/getChaptersInfo', p)['chapterList']
+    chapter_list = post('/courseStudy/course/getChaptersInfoOnly', p)['chapterList']
+    studied = post('/appserver/student/queryStudiedLessonsNew', p)['studiedInfos']
     for chapter in chapter_list:
         for lesson in chapter['lessonList']:
             if lesson['sectionList'] is not None:
                 for section in lesson['sectionList']:
-                    save_record(section, lesson['chapterId'], lesson['id'])
+                    save_record(section, True)
             else:
-                save_record(lesson, None, None)
+                save_record(lesson, False)
 
     logger.info('Videos done.')
 
