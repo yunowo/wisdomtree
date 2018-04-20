@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
 
     def save_record(dic, is_section):
-        if f'L{dic["id"]}' in studied and studied[f'L{dic["id"]}']['watchState'] == 1:
+        if studied is not None and f'L{dic["id"]}' in studied and studied[f'L{dic["id"]}']['watchState'] == 1:
             return
         p = {'deviceId': app_key, 'userId': user, 'versionKey': 1}
         rt = post('/student/tutorial/getSaveLearningRecordToken', p)
