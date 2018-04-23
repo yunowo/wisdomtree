@@ -101,7 +101,7 @@ if __name__ == '__main__':
         exit()
 
 
-    def save_record(dic, is_section):
+    def save_record(dic, chapter_id, is_section):
         if studied is not None and f'L{dic["id"]}' in studied and studied[f'L{dic["id"]}']['watchState'] == 1:
             return
         p = {'deviceId': app_key, 'userId': user, 'versionKey': 1}
@@ -109,7 +109,7 @@ if __name__ == '__main__':
         token = utils.rsa_decrypt(rsa_key, rt)
         video_time = dic['videoSec']
         j = {'learnTime': str(timedelta(seconds=video_time)), 'userId': user, 'personalCourseId': link_course_id,
-             'recruitId': recruit_id, 'chapterId': dic['chapterId'], 'sourseType': 3, 'playTimes': video_time,
+             'recruitId': recruit_id, 'chapterId': chapter_id, 'sourseType': 3, 'playTimes': video_time,
              'videoId': dic['videoId'], 'token': token, 'deviceId': app_key}
         if is_section:
             j['lessonVideoId'] = dic['id']
@@ -128,9 +128,9 @@ if __name__ == '__main__':
         for lesson in chapter['lessonList']:
             if lesson['sectionList'] is not None:
                 for section in lesson['sectionList']:
-                    save_record(section, True)
+                    save_record(section, lesson['chapterId'], True)
             else:
-                save_record(lesson, False)
+                save_record(lesson, lesson['chapterId'], False)
 
     logger.info('Videos done.')
 
