@@ -101,20 +101,18 @@ if __name__ == '__main__':
         exit()
 
 
-    def save_record(dic, chapter_id, is_section):
+    def save_record(dic, lesson, is_section):
         if studied is not None and f'L{dic["id"]}' in studied and studied[f'L{dic["id"]}']['watchState'] == 1:
             return
         p = {'deviceId': app_key, 'userId': user, 'versionKey': 1}
         rt = post('/student/tutorial/getSaveLearningRecordToken', p)
         token = utils.rsa_decrypt(rsa_key, rt)
         video_time = dic['videoSec']
-        j = {'learnTime': str(timedelta(seconds=video_time)), 'userId': user, 'personalCourseId': link_course_id,
-             'recruitId': recruit_id, 'chapterId': chapter_id, 'sourseType': 3, 'playTimes': video_time,
-             'videoId': dic['videoId'], 'token': token, 'deviceId': app_key}
+        j = {'lessonId': lesson['id'], 'learnTime': str(timedelta(seconds=video_time)), 'userId': user,
+             'personalCourseId': link_course_id, 'recruitId': recruit_id, 'chapterId': lesson['chapterId'],
+             'sourseType': 3, 'playTimes': video_time, 'videoId': dic['videoId'], 'token': token, 'deviceId': app_key}
         if is_section:
             j['lessonVideoId'] = dic['id']
-        else:
-            j['lessonId'] = dic['id']
         json_str = json.dumps(j, sort_keys=True, separators=(',', ':'))
         p = {'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(yzm_key, json_str), 'versionKey': 2}
         rt = post('/student/tutorial/saveLearningRecordByToken', p)
@@ -128,9 +126,9 @@ if __name__ == '__main__':
         for lesson in chapter['lessonList']:
             if lesson['sectionList'] is not None:
                 for section in lesson['sectionList']:
-                    save_record(section, lesson['chapterId'], True)
+                    save_record(section, lesson, True)
             else:
-                save_record(lesson, lesson['chapterId'], False)
+                save_record(lesson, lesson, False)
 
     logger.info('Videos done.')
 
