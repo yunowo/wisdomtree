@@ -100,13 +100,14 @@ if __name__ == '__main__':
     if course_id == 0:
         exit()
 
+    p = {'deviceId': app_key, 'userId': user, 'versionKey': 2}
+    rt = post('/student/tutorial/getSaveLearningRecordToken', p)
+    token = utils.rsa_decrypt(rsa_key, rt)
+
 
     def save_record(dic, lesson, is_section):
         if studied is not None and f'L{dic["id"]}' in studied and studied[f'L{dic["id"]}']['watchState'] == 1:
             return
-        p = {'deviceId': app_key, 'userId': user, 'versionKey': 1}
-        rt = post('/student/tutorial/getSaveLearningRecordToken', p)
-        token = utils.rsa_decrypt(rsa_key, rt)
         video_time = dic['videoSec']
         j = {'lessonId': lesson['id'], 'learnTime': str(timedelta(seconds=video_time)), 'userId': user,
              'personalCourseId': link_course_id, 'recruitId': recruit_id, 'chapterId': lesson['chapterId'],
@@ -197,7 +198,7 @@ if __name__ == '__main__':
                 json_str = json.dumps(pa, separators=(',', ':'))
                 pb = {'mobileType': 2, 'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(rsa_key, json_str),
                       'versionKey': 1}
-                rt = post('/student/exam/saveExamAnswer', pb)
+                rt = post('/newstudentexam/saveExamAnswer', pb)
                 logger.info(rt[0]['messages'])
 
         if not EXAM_AUTO_SUBMIT:
@@ -209,7 +210,7 @@ if __name__ == '__main__':
         json_str = json.dumps(pa, separators=(',', ':'))
         pb = {'mobileType': 2, 'recruitId': recruit_id, 'examId': str(exam_id), 'userId': user, 'jsonStr': json_str,
               'secretStr': utils.rsa_encrypt(rsa_key, json_str), 'type': exam_type, 'versionKey': 1}
-        raw = post('/student/exam/submitExamInfo', pb, raw=True)
+        raw = post('/newstudentexam/submitExamInfo', pb, raw=True)
         rt = json.loads(raw.replace('"{', '{').replace('}"', '}').replace('\\', ''))['rt']
         logger.info(f'{rt["messages"]} Score: {rt["errorInfo"]["score"]}')
 
