@@ -55,9 +55,10 @@ def login():
     logger.info(f'{u} {uu} {n}')
     with open('userinfo.py', 'w+', encoding='utf-8') as f:
         f.writelines(f'USER = {u}\n')
+        f.writelines(f'UUID = "{uu}"\n')
         f.writelines(f'NAME = "{n}"\n')
     logger.info('Login OK.')
-    return u, n
+    return u, uu, n
 
 
 if __name__ == '__main__':
@@ -79,11 +80,12 @@ if __name__ == '__main__':
         import userinfo
 
         user = userinfo.USER
+        uu = userinfo.UUID
         name = userinfo.NAME
         if input(f'Current user:{user} {name}:[y/n]') != 'y':
-            user, name = login()
+            user, uu, name = login()
     except:
-        user, name = login()
+        user, uu, name = login()
 
     p = {'userId': user, 'page': 1, 'pageSize': 500}
     d = post('/student/tutorial/getStudyingCourseList', p, sleep=False)
@@ -100,9 +102,9 @@ if __name__ == '__main__':
     if course_id == 0:
         exit()
 
-    p = {'deviceId': app_key, 'userId': user, 'versionKey': 2}
-    rt = post('/student/tutorial/getSaveLearningRecordToken', p)
-    token = utils.rsa_decrypt(rsa_key, rt)
+    p = {'deviceId': app_key, 'uuid': uu, 'timeNote': '1515340800'}
+    rt = post('/student/tutorial/getSaveStudyRecordToken', p)
+    token = utils.rsa_decrypt_public(public_key, rt)
 
 
     def save_record(dic, lesson, is_section):

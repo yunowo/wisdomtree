@@ -5,7 +5,7 @@ from Cryptodome import Random
 from Cryptodome.Cipher import PKCS1_v1_5
 from Cryptodome.Math.Numbers import Integer
 from Cryptodome.Util.number import ceil_div, bytes_to_long, long_to_bytes, size
-from Cryptodome.Util.py3compat import bchr, bord, b
+from Cryptodome.Util.py3compat import bchr, bord, b, bstr
 
 '''
 pycrypto doesn't allow non hash objects in Cryptodome.Signature.PKCS115_SigScheme.
@@ -45,6 +45,25 @@ def _encrypt(key, message):
     return c
 
 
+def _decrypt(key, ciphertext):
+    modBits = size(key.n)
+    k = ceil_div(modBits, 8)  # Convert from bits to bytes
+
+    # Step 1
+    if len(ciphertext) != k:
+        raise ValueError("Ciphertext with incorrect length.")
+    # Step 2a (O2SIP)
+    ct_int = bytes_to_long(bstr(ciphertext))
+    # Step 2b (RSADP)
+    m_int = pow(Integer(ct_int), key._e, key._n)
+    # Complete step 2c (I2OSP)
+    em = long_to_bytes(m_int, k)
+    # Step 3
+    sep = em.find(bchr(0x00), 2)
+    # Step 4
+    return em[sep + 1:]
+
+
 def rsa_encrypt(key, data):
     b = data.encode('utf-8')
     s = b''.join([_encrypt(key, b[i:i + 117]) for i in range(0, len(b), 117)])
@@ -63,6 +82,12 @@ def rsa_decrypt(key, data):
     cipher = PKCS1_v1_5.new(key)
     b = base64.b64decode(data)
     s = b''.join([cipher.decrypt(b[i:i + 128], sentinel) for i in range(0, len(b), 128)])
+    return s.decode('utf-8')
+
+
+def rsa_decrypt_public(key, data):
+    b = base64.b64decode(data)
+    s = b''.join([_decrypt(key, b[i:i + 128]) for i in range(0, len(b), 128)])
     return s.decode('utf-8')
 
 
