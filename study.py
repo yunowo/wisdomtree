@@ -187,7 +187,8 @@ if __name__ == '__main__':
                  'questionIds': f'[{",".join(undone_question_ids)}]', 'userId': user}
             scores = post('/student/exam/getQuestionDoneState', p)
             undone_question_ids[:] = itertools.filterfalse(
-                lambda q: scores[q]['score'] == questions[q]['qscore'], undone_question_ids)
+                lambda q: scores[q]['score'] == questions[q]['qscore'] or len(questions[q]['possibleAnswers']) == 0,
+                undone_question_ids)
             logger.info(f'{len(undone_question_ids)} questions left.')
 
             for question_id in undone_question_ids:
