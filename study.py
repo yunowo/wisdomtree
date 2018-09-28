@@ -35,6 +35,10 @@ def post(url, data, raw=False, sleep=True):
         raise ValueError(j['msg'])
 
 
+def to_json(j):
+    return json.dumps(j, sort_keys=True, separators=(',', ':'))
+
+
 def login():
     account = input('Account(Phone):')
     password = getpass(prompt='Password:')
@@ -116,10 +120,10 @@ if __name__ == '__main__':
              'sourseType': 3, 'playTimes': video_time, 'videoId': dic['videoId'], 'token': token, 'deviceId': app_key}
         if is_section:
             j['lessonVideoId'] = dic['id']
-        json_str = json.dumps(j, sort_keys=True, separators=(',', ':'))
+        json_str = to_json(j)
         p = {'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(yzm_key, json_str), 'timeNote': '1515340800',
-             'uuid': uu, 'versionKey': 2}
-        rt = post('/student/tutorial/saveStudyRecordByToken', p)
+             'uuid': uu, 'versionKey': '2'}
+        rt = post('/student/tutorial/saveStudyRecordByTokenEncry', p)
         logger.info(dic['name'] + rt)
 
 
@@ -158,16 +162,15 @@ if __name__ == '__main__':
         student_exam_id = exam['studentExamInfoDto']['id']
         question_ids = []
 
-        p = {'recruitId': recruit_id, 'examId': exam_id, 'isSubmit': 0, 'studentExamId': student_exam_id,
-             'type': exam_type, 'userId': user}
-        ids = post('/student/exam/getExamQuestionIdFromTeacher', p)
-        p.pop('isSubmit')
-        p.pop('type')
+        j = {'examId': exam_id, 'uuid': uuid}
+        p = {**j, 'secretStr': utils.rsa_encrypt(yzm_key, to_json(j)), 'versionKey': '2'}
+        ids = post('/student/exam/getExamQuestionIdFromTeacherEncry', p)
         for exam_question in ids:
             question_ids.append(str(exam_question['questionId']))
-            p['questionIds'] = f'[{",".join(question_ids)}]'
 
-        questions = post('/student/exam/getQuestionDetailInfoFromTeacher', p)
+        j = {'examId': exam_id, 'questionIds': f'[{",".join(question_ids)}]', 'uuid': uuid}
+        p = {**j, 'secretStr': utils.rsa_encrypt(yzm_key, to_json(j)), 'versionKey': '2'}
+        questions = post('/student/exam/getQuestionDetailInfoFromTeacherEncry', p)
         undone_question_ids = question_ids[:]
         for question_id in question_ids:
             question = questions[question_id]
@@ -199,10 +202,10 @@ if __name__ == '__main__':
                 pa = [{'deviceType': '1', 'examId': str(exam_id), 'userId': str(user),
                        'stuExamId': str(student_exam_id), 'questionId': str(question_id), 'recruitId': str(recruit_id),
                        'answerIds': c, 'dataIds': []}]
-                json_str = json.dumps(pa, separators=(',', ':'))
-                pb = {'mobileType': 2, 'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(rsa_key, json_str),
-                      'versionKey': 1}
-                rt = post('/newstudentexam/saveExamAnswer', pb)
+                json_str = to_json(pa)
+                pb = {'mobileType': '2', 'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(yzm_key, json_str),
+                      'versionKey': '2'}
+                rt = post('/newexam/saveExamAnswerEncry', pb)
                 logger.info(rt[0]['messages'])
 
         if not EXAM_AUTO_SUBMIT:
@@ -210,11 +213,11 @@ if __name__ == '__main__':
 
         pa = {'deviceType': '1', 'userId': str(user), 'stuExamId': str(student_exam_id), 'recruitId': recruit_id,
               'examId': str(exam_id), 'questionIds': question_ids, 'remainingTime': '0',
-              'achieveCount': str(question_ids.__len__())}
-        json_str = json.dumps(pa, separators=(',', ':'))
-        pb = {'mobileType': 2, 'recruitId': recruit_id, 'examId': str(exam_id), 'userId': user, 'jsonStr': json_str,
-              'secretStr': utils.rsa_encrypt(rsa_key, json_str), 'type': exam_type, 'versionKey': 1}
-        raw = post('/newstudentexam/submitExamInfo', pb, raw=True)
+              'achieveCount': str(len(question_ids))}
+        json_str = to_json(pa)
+        pb = {'mobileType': '2', 'uuid': uuid, 'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(yzm_key, json_str),
+              'type': exam_type, 'versionKey': '2'}
+        raw = post('/newexam/submitExamInfoEncry', pb, raw=True)
         rt = json.loads(raw.replace('"{', '{').replace('}"', '}').replace('\\', ''))['rt']
         logger.info(f'{rt["messages"]} Score: {rt["errorInfo"]["score"]}')
 
