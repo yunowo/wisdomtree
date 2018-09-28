@@ -2,6 +2,7 @@ import itertools
 import logging
 import json
 import random
+import string
 import time
 from datetime import datetime, timedelta
 from getpass import getpass
@@ -19,6 +20,8 @@ EXAM_AUTO_SUBMIT = False
 
 
 def post(url, data, raw=False, sleep=True):
+    device = ''.join(random.choice(string.ascii_letters) for x in range(random.randint(6, 15)))
+    s.headers.update({'User-Agent': f'Dalvik/2.1.0 (Linux; U; Android 9.0.0; {device})'})
     r = s.post(SERVER + url, data=data, verify=SSL_VERIFY)
     if sleep:
         time.sleep(0.5 + random.random())
@@ -72,9 +75,7 @@ if __name__ == '__main__':
     app_key = utils.md5_digest(str(uuid.uuid4()).replace('-', ''))
 
     s = requests.Session()
-    s.headers.update({
-        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 8.1.0; Pixel 2 XL Build/OPM1.171019.021)',
-        'Accept-Encoding': 'gzip'})
+    s.headers.update({'Accept-Encoding': 'gzip'})
 
     try:
         import userinfo
@@ -102,14 +103,13 @@ if __name__ == '__main__':
     if course_id == 0:
         exit()
 
-    p = {'deviceId': app_key, 'uuid': uu, 'timeNote': '1515340800'}
-    rt = post('/student/tutorial/getSaveStudyRecordToken', p)
-    token = utils.rsa_decrypt_public(public_key, rt)
-
 
     def save_record(dic, lesson, is_section):
         if studied is not None and f'L{dic["id"]}' in studied and studied[f'L{dic["id"]}']['watchState'] == 1:
             return
+        p = {'deviceId': app_key, 'uuid': uu, 'timeNote': '1515340800'}
+        rt = post('/student/tutorial/getSaveStudyRecordToken', p)
+        token = utils.rsa_decrypt_public(public_key, rt)
         video_time = dic['videoSec']
         j = {'lessonId': lesson['id'], 'learnTime': str(timedelta(seconds=video_time)), 'userId': user,
              'personalCourseId': link_course_id, 'recruitId': recruit_id, 'chapterId': lesson['chapterId'],
@@ -117,8 +117,9 @@ if __name__ == '__main__':
         if is_section:
             j['lessonVideoId'] = dic['id']
         json_str = json.dumps(j, sort_keys=True, separators=(',', ':'))
-        p = {'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(yzm_key, json_str), 'versionKey': 2}
-        rt = post('/student/tutorial/saveLearningRecordByToken', p)
+        p = {'jsonStr': json_str, 'secretStr': utils.rsa_encrypt(yzm_key, json_str), 'timeNote': '1515340800',
+             'uuid': uu, 'versionKey': 2}
+        rt = post('/student/tutorial/saveStudyRecordByToken', p)
         logger.info(dic['name'] + rt)
 
 
